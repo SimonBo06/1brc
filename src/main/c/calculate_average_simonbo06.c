@@ -11,8 +11,7 @@
 
 #define FILE_PATH "./measurements.txt"
 
-typedef struct s_knot
-{
+typedef struct s_knot {
     struct s_knot *children[256];
     short min;
     short max;
@@ -34,10 +33,8 @@ typedef struct
 
 } s_thread_input;
 
-void print_trie(s_knot *knot)
-{
-    for (int i = 0; i < 256; i++)
-    {
+void print_trie(s_knot *knot) {
+    for (int i = 0; i < 256; i++) {
         if (knot->amount > 0)
             printf("Key;\n"); // TODO
         if (knot->children[i])
@@ -45,13 +42,10 @@ void print_trie(s_knot *knot)
     }
 }
 
-void insert_trie(s_knot *trie, unsigned char *key, int key_len, int temperature)
-{
+void insert_trie(s_knot *trie, unsigned char *key, int key_len, int temperature) {
     s_knot *knot = trie;
-    for (int i = 0; i < key_len; i++)
-    {
-        if (!(knot->children[key[i]]))
-        {
+    for (int i = 0; i < key_len; i++) {
+        if (!(knot->children[key[i]])) {
             s_knot *k;
             k = malloc(sizeof(s_knot));
             knot->children[key[i]] = k;
@@ -59,14 +53,13 @@ void insert_trie(s_knot *trie, unsigned char *key, int key_len, int temperature)
         }
     }
 
-    if (knot->is_initialized != 0xFF)
-    {
+    if (knot->is_initialized != 0xFF) {
         knot->max = temperature;
         knot->min = temperature;
         knot->aggregate = temperature;
         knot->amount = 1;
         knot->is_initialized = 0xFF;
-        knot->key = malloc()
+        knot->key = malloc(key_len);
     }
     if (temperature < knot->min)
         knot->min = temperature;
@@ -77,14 +70,11 @@ void insert_trie(s_knot *trie, unsigned char *key, int key_len, int temperature)
     knot->amount++;
 }
 
-void *aggregate(void *arg)
-{
+void *aggregate(void *arg) {
     s_thread_input *thread_inputs = (s_thread_input *)arg;
 
-    while (1)
-    {
-        while (thread_inputs->data[thread_inputs->offset] != '\n')
-        {
+    while (1) {
+        while (thread_inputs->data[thread_inputs->offset] != '\n') {
             thread_inputs->offset++;
             if (thread_inputs->offset >= thread_inputs->end)
                 return NULL;
@@ -95,8 +85,7 @@ void *aggregate(void *arg)
 
         int key_len = 0;
 
-        for (key_len = 0; key_len < 100; key_len++)
-        {
+        for (key_len = 0; key_len < 100; key_len++) {
             thread_inputs->offset++;
             if (thread_inputs->data[thread_inputs->offset] == ';')
                 break;
@@ -116,25 +105,21 @@ void *aggregate(void *arg)
     }
 }
 
-void combine_trie(s_knot *trie, s_thread_input *input)
-{
+void combine_trie(s_knot *trie, s_thread_input *input) {
     s_knot *private_trie = &(input->trie);
     // TODO
 }
 
-int main()
-{
+int main() {
     int fd = open(FILE_PATH, O_RDONLY);
 
-    if (fd == -1)
-    {
+    if (fd == -1) {
         perror(FILE_PATH);
         return 1;
     }
 
     struct stat file_stat;
-    if (fstat(fd, &file_stat) == -1)
-    {
+    if (fstat(fd, &file_stat) == -1) {
         perror("fstat");
         close(fd);
         return 1;
@@ -142,8 +127,7 @@ int main()
     off_t size = file_stat.st_size;
 
     char *data = mmap(NULL, size, PROT_READ, MAP_PRIVATE, fd, 0);
-    if (data == MAP_FAILED)
-    {
+    if (data == MAP_FAILED) {
         perror("mmap");
         close(fd);
         return 1;
@@ -155,8 +139,7 @@ int main()
 
     s_thread_input inputs[THREAD_COUNT];
 
-    for (int i = 0; i < THREAD_COUNT; i++)
-    {
+    for (int i = 0; i < THREAD_COUNT; i++) {
         inputs[i].offset = i * chunk_size;
         inputs[i].end = i * chunk_size + chunk_size;
         inputs[i].size = size;
